@@ -41,7 +41,7 @@ pip install -r requirements.txt
 - Filters out responses <10 chars or >500 chars
 - Takes 300K sample subset (enough for strong style transfer)
 - Converts to Llama-3.1 chat format with Hinglish system prompt
-- Splits 95% train / 5% eval
+- Splits 99% train / 1% eval (small eval set — 3K samples keeps eval fast at ~4 min per pass)
 - Saves to `./processed-data/`
 
 ```bash
@@ -68,12 +68,12 @@ Tu ek friendly Indian dost hai jo Hinglish mein baat karta hai. Casual, fun, aur
 - Target all linear layers: q/k/v/o_proj, gate/up/down_proj
 
 **Training hyperparameters:**
-- Epochs: 3
-- Batch size: 4, gradient accumulation 4 → effective batch size 16
+- Epochs: 1 (loss plateaus early — 1 epoch is sufficient for style transfer)
+- Batch size: 8, gradient accumulation 4 → effective batch size 32
 - Learning rate: 2e-4, cosine schedule, 5% warmup
 - bf16, gradient checkpointing ON
 - Optimizer: paged_adamw_8bit
-- Save every 1000 steps, keep best 3 by eval loss
+- Save every 1000 steps, eval every 2000 steps, keep best 3 by eval loss
 
 ```bash
 python train.py
@@ -102,12 +102,26 @@ python inference.py --model_path ./hinglish-friend-merged --interactive
 
 ---
 
-## Estimates
+## Lessons from First Training Run (stopped at step 2500 / 53K)
+- Loss dropped from 2.93 → 0.65 in just 2000 steps, then plateaued — style transfer converges fast
+- Eval every 500 steps with 15K eval samples = 28 min per eval pass = 37% of total runtime (bottleneck!)
+- VRAM usage was only 11.2GB / 24GB — room to increase batch size
+- At 5.75 sec/step, full 3-epoch run would take ~134 hours — way too long
+
+**Changes made (v2):**
+1. Epochs: 3 → 1 (loss already flat by step 2000, which is 0.04 epochs)
+2. Batch size: 4 → 8 (VRAM headroom allows it, halves step count)
+3. Eval steps: 500 → 2000 (less frequent eval)
+4. Eval set: 5% (15K) → 1% (3K) (faster eval passes, ~4 min instead of 28 min)
+5. Total steps: 53K → ~9,300 (1 epoch, batch 32)
+6. Estimated time: ~134h → ~16-18h (with eval overhead)
+
+## Estimates (v2)
 
 | Metric | Value |
 |--------|-------|
-| VRAM usage | ~12-16GB of 24GB |
-| Training time | ~6-10 hours (300K samples, 3 epochs) |
+| VRAM usage | ~14-18GB of 24GB |
+| Training time | ~16-18 hours (300K samples, 1 epoch) |
 | Storage needed | ~100GB total |
 
 ## Storage Budget

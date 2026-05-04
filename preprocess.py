@@ -34,7 +34,7 @@ def main():
     parser.add_argument("--num_samples", type=int, default=300_000, help="Number of samples to use")
     parser.add_argument("--min_output_chars", type=int, default=10)
     parser.add_argument("--max_output_chars", type=int, default=500)
-    parser.add_argument("--eval_ratio", type=float, default=0.05)
+    parser.add_argument("--eval_ratio", type=float, default=0.01)
     parser.add_argument("--output_dir", type=str, default="./processed-data")
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
