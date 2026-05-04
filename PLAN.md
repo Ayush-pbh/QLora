@@ -39,7 +39,7 @@ pip install -r requirements.txt
 ### Step 2: Preprocess Data (`preprocess.py`)
 - Downloads the HF dataset
 - Filters out responses <10 chars or >500 chars
-- Takes 300K sample subset (enough for strong style transfer)
+- Takes 100K sample subset (style transfer converges fast — validated in first run)
 - Converts to Llama-3.1 chat format with Hinglish system prompt
 - Splits 99% train / 1% eval (small eval set — 3K samples keeps eval fast at ~4 min per pass)
 - Saves to `./processed-data/`
@@ -111,17 +111,19 @@ python inference.py --model_path ./hinglish-friend-merged --interactive
 **Changes made (v2):**
 1. Epochs: 3 → 1 (loss already flat by step 2000, which is 0.04 epochs)
 2. Batch size: 4 → 8 (VRAM headroom allows it, halves step count)
-3. Eval steps: 500 → 2000 (less frequent eval)
-4. Eval set: 5% (15K) → 1% (3K) (faster eval passes, ~4 min instead of 28 min)
-5. Total steps: 53K → ~9,300 (1 epoch, batch 32)
-6. Estimated time: ~134h → ~16-18h (with eval overhead)
+3. Eval steps: 500 → 2000 (reduce eval overhead dramatically)
+4. Eval set: 5% (15K) → 1% (1K) (faster eval passes, ~1-2 min instead of 28 min)
+5. Samples: 300K → 100K (style transfer converges fast, validate with smaller run first)
+6. Total steps: 53K → ~3,125 (1 epoch, batch 32, 100K samples)
+7. Estimated time: ~134h → ~5h
 
-## Estimates (v2)
+## Estimates (v3 — 100K run)
 
 | Metric | Value |
 |--------|-------|
 | VRAM usage | ~14-18GB of 24GB |
-| Training time | ~16-18 hours (300K samples, 1 epoch) |
+| Training time | ~5 hours (100K samples, 1 epoch, batch 32) |
+| Total steps | ~3,125 |
 | Storage needed | ~100GB total |
 
 ## Storage Budget
